@@ -89,7 +89,9 @@ class App {
         if (!is_writable($path)) return false;
         $json = json_encode($cfg, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         if ($json === false) return false;
-        $ok = file_put_contents($path, $json . "\n") !== false;
+        $tmp = $path . '.tmp';
+        if (file_put_contents($tmp, $json . "\n", LOCK_EX) === false) return false;
+        $ok = rename($tmp, $path);
         if ($ok) self::$config = $cfg;
         return $ok;
     }
