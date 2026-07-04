@@ -342,6 +342,8 @@
   "setup.confirm": "Confirm password",
   "setup.submit": "Set password",
   "setup.mismatch": "Passwords do not match",
+  "setup.minLength": "Password must be at least 8 characters",
+  "setup.minHint": "At least 8 characters",
   "setup.done": "Password set",
   "setup.notWritable": "config.json is not writable — make it writable to set a password.",
   "pw.current": "Current password",

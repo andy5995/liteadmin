@@ -342,6 +342,8 @@
   "setup.confirm": "Bekräfta lösenord",
   "setup.submit": "Ange lösenord",
   "setup.mismatch": "Lösenorden matchar inte",
+  "setup.minLength": "Lösenordet måste vara minst 8 tecken",
+  "setup.minHint": "Minst 8 tecken",
   "setup.done": "Lösenord angivet",
   "setup.notWritable": "config.json är inte skrivbar — gör den skrivbar för att ange ett lösenord.",
   "pw.current": "Nuvarande lösenord",

@@ -342,6 +342,8 @@
   "setup.confirm": "Wachtwurd befêstigje",
   "setup.submit": "Wachtwurd ynstelle",
   "setup.mismatch": "Wachtwurden komme net oerien",
+  "setup.minLength": "Wachtwurd moat op syn minst 8 tekens wêze",
+  "setup.minHint": "Op syn minst 8 tekens",
   "setup.done": "Wachtwurd ynsteld",
   "setup.notWritable": "config.json is net skriuwber — meitsje it skriuwber om in wachtwurd yn te stellen.",
   "pw.current": "Hjoeddeisk wachtwurd",

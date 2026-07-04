@@ -342,6 +342,8 @@
   "setup.confirm": "Wachtwoord bevestigen",
   "setup.submit": "Wachtwoord instellen",
   "setup.mismatch": "Wachtwoorden komen niet overeen",
+  "setup.minLength": "Wachtwoord moet minstens 8 tekens bevatten",
+  "setup.minHint": "Minimaal 8 tekens",
   "setup.done": "Wachtwoord ingesteld",
   "setup.notWritable": "config.json is niet schrijfbaar — maak het schrijfbaar om een wachtwoord in te stellen.",
   "pw.current": "Huidig wachtwoord",

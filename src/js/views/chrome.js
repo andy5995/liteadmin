@@ -70,20 +70,21 @@ export function openPreferences(ctx) {
 
 function changePasswordDialog() {
   const cur = el('input', { type: 'password', autocomplete: 'current-password', 'aria-label': t('pw.current') });
-  const nw = el('input', { type: 'password', autocomplete: 'new-password', 'aria-label': t('pw.new') });
-  const conf = el('input', { type: 'password', autocomplete: 'new-password', 'aria-label': t('pw.confirm') });
+  const nw = el('input', { type: 'password', autocomplete: 'new-password', minlength: '8', 'aria-label': t('pw.new') });
+  const conf = el('input', { type: 'password', autocomplete: 'new-password', minlength: '8', 'aria-label': t('pw.confirm') });
   const dlg = el('dialog', { class: 'small fit', 'aria-label': t('prefs.changePassword') }, [
     el('h5', { text: t('prefs.changePassword') }),
     el('div', { class: 'field label border' }, [cur, el('label', { text: t('pw.current') })]),
     el('div', { class: 'field label border' }, [nw, el('label', { text: t('pw.new') })]),
     el('div', { class: 'field label border' }, [conf, el('label', { text: t('pw.confirm') })]),
+    el('p', { class: 'small-text', text: t('setup.minHint') }),
     el('nav', { class: 'right-align' }, [
       el('button', { class: 'border', type: 'button', text: t('common.cancel'), onClick: () => dlg.remove() }),
       el('button', { type: 'button', text: t('common.save'), onClick: save }),
     ]),
   ]);
   async function save() {
-    if (!nw.value) return toast(t('pw.new'), true);
+    if (nw.value.length < 8) return toast(t('setup.minLength'), true);
     if (nw.value !== conf.value) return toast(t('setup.mismatch'), true);
     try { await Api.changePassword(cur.value, nw.value); toast(t('pw.changed')); dlg.remove(); }
     catch (e) { toast(e.message, true); }

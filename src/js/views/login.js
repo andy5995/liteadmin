@@ -35,8 +35,8 @@ export function renderLogin(root, ctx) {
 
 export function renderSetup(root, ctx) {
   clear(root);
-  const pass = el('input', { type: 'password', autocomplete: 'new-password', required: true, 'aria-label': t('setup.password') });
-  const confirm = el('input', { type: 'password', autocomplete: 'new-password', required: true, 'aria-label': t('setup.confirm') });
+  const pass = el('input', { type: 'password', autocomplete: 'new-password', required: true, minlength: '8', 'aria-label': t('setup.password') });
+  const confirm = el('input', { type: 'password', autocomplete: 'new-password', required: true, minlength: '8', 'aria-label': t('setup.confirm') });
   const writable = Api.configWritable;
 
   const submitBtn = el('button', { class: 'responsive', type: 'submit', disabled: !writable }, [el('i', { text: 'lock' }), el('span', { text: t('setup.submit') })]);
@@ -52,13 +52,14 @@ export function renderSetup(root, ctx) {
       writable ? null : el('p', { class: 'small-text error-text', text: t('setup.notWritable') }),
       el('div', { class: 'field label border' }, [pass, el('label', { text: t('setup.password') })]),
       el('div', { class: 'field label border' }, [confirm, el('label', { text: t('setup.confirm') })]),
+      el('p', { class: 'small-text', text: t('setup.minHint') }),
       submitBtn,
     ].filter(Boolean)),
   ]);
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
-    if (!pass.value) return toast(t('setup.password'), true);
+    if (pass.value.length < 8) return toast(t('setup.minLength'), true);
     if (pass.value !== confirm.value) return toast(t('setup.mismatch'), true);
     try {
       await Api.setup(pass.value);
