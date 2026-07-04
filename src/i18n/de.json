@@ -48,6 +48,7 @@
   "sql.run": "Ausführen",
   "sql.runScript": "Als Skript ausführen",
   "sql.clear": "Leeren",
+  "sql.historyFilter": "Verlauf filtern",
   "sql.wrapTx": "Skript in einer Transaktion ausführen",
   "sql.txSkipped": "Transaktion übersprungen (Skript enthält VACUUM)",
   "json.format": "Formatieren",

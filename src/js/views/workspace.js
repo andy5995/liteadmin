@@ -1382,6 +1382,7 @@ async function sqlTab(ws) {
   const runBtn = el('button', { class: 'small' }, [el('i', { text: 'play_arrow' }), el('span', { text: t('sql.run') })]);
   const scriptBtn = el('button', { class: 'small border' }, [el('i', { text: 'playlist_play' }), el('span', { text: t('sql.runScript') })]);
   const clearBtn = el('button', { class: 'small border', onClick: () => { ws.editor && ws.editor.setValue(''); ws.sqlText = ''; } }, [el('i', { text: 'clear' }), el('span', { text: t('sql.clear') })]);
+  const histBtn = el('button', { class: 'small border', onClick: () => historyPickerDialog(ws) }, [el('i', { text: 'history' }), el('span', { text: t('tab.history') })]);
   const txChk = el('input', { type: 'checkbox', checked: true });
   const autoChk = el('input', { type: 'checkbox' });
   const fullChk = el('input', { type: 'checkbox' });
@@ -1394,7 +1395,7 @@ async function sqlTab(ws) {
   const jsonBtn = el('button', { class: 'small border', onClick: () => jsonWizard(ws) }, [el('i', { text: 'data_object' }), el('span', { text: t('jsonq.title') })]);
 
   ws.body.append(
-    el('nav', { class: 'wrap toolbar' }, [runBtn, scriptBtn, clearBtn, explainBtn, benchBtn, el('div', { class: 'max' }), aggBtn, tsBtn, winBtn, jsonBtn]),
+    el('nav', { class: 'wrap toolbar' }, [runBtn, scriptBtn, clearBtn, histBtn, explainBtn, benchBtn, el('div', { class: 'max' }), aggBtn, tsBtn, winBtn, jsonBtn]),
     el('nav', { class: 'wrap toolbar' }, [
       el('label', { class: 'checkbox' }, [txChk, el('span', { text: t('sql.wrapTx') })]),
       el('label', { class: 'checkbox' }, [autoChk, el('span', { text: t('explain.auto') })]),
@@ -2162,6 +2163,45 @@ function historyTab(ws) {
     item.addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
     ws.body.append(item);
   }
+}
+
+function historyPickerDialog(ws) {
+  const items = history.list();
+  const filter = el('input', { type: 'search', placeholder: t('sql.historyFilter') });
+  const listEl = el('div', { class: 'hist-picker' });
+  const dlg = el('dialog', { class: 'large fit', 'aria-label': t('tab.history') }, [
+    el('h5', { text: t('tab.history') }),
+    el('div', { class: 'field label prefix border small' }, [el('i', { text: 'search' }), filter, el('label', { text: t('sql.historyFilter') })]),
+    listEl,
+    el('nav', { class: 'right-align' }, [
+      el('button', { class: 'border', disabled: !items.length, onClick: () => { history.clear(); dlg.remove(); } }, [el('i', { text: 'delete_sweep' }), el('span', { text: t('sql.clear') })]),
+      el('button', { text: t('prefs.close'), onClick: () => dlg.remove() }),
+    ]),
+  ]);
+  function render() {
+    const q = filter.value.trim().toLowerCase();
+    const shown = q ? items.filter(h => h.sql.toLowerCase().includes(q)) : items;
+    clear(listEl);
+    if (!shown.length) { listEl.append(muted(t('start.noRecent'))); return; }
+    for (const h of shown) {
+      const row = el('article', { class: 'history-item round border wave', role: 'button', tabindex: '0' }, [
+        el('code', { text: h.sql }),
+        el('div', { class: 'small-text', text: new Date(h.ts).toLocaleString() + ' · ' + h.db }),
+      ]);
+      const load = () => {
+        ws.sqlText = h.sql;
+        if (ws.editor) { ws.editor.setValue(h.sql); ws.editor.focus(); } else { selectTab(ws, 'sql'); }
+        dlg.remove();
+      };
+      row.addEventListener('click', load);
+      row.addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
+      listEl.append(row);
+    }
+  }
+  filter.addEventListener('input', render);
+  render();
+  document.body.append(dlg); dlg.showModal();
+  filter.focus();
 }
 
 function section(title, content) { return el('section', { class: 'section' }, [el('h6', { class: 'small', text: title }), content]); }

@@ -48,6 +48,7 @@
   "sql.run": "Run",
   "sql.runScript": "Run as script",
   "sql.clear": "Clear",
+  "sql.historyFilter": "Filter history",
   "sql.wrapTx": "Wrap script in a transaction",
   "sql.txSkipped": "Transaction skipped (script contains VACUUM)",
   "json.format": "Format",

@@ -48,6 +48,7 @@
   "sql.run": "Útfiere",
   "sql.runScript": "As skript útfiere",
   "sql.clear": "Wiskje",
+  "sql.historyFilter": "Skiednis filterje",
   "sql.wrapTx": "Skript yn in transaksje útfiere",
   "sql.txSkipped": "Transaksje oerslein (skript befettet VACUUM)",
   "json.format": "Formatearje",

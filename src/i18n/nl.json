@@ -48,6 +48,7 @@
   "sql.run": "Uitvoeren",
   "sql.runScript": "Als script uitvoeren",
   "sql.clear": "Wissen",
+  "sql.historyFilter": "Geschiedenis filteren",
   "sql.wrapTx": "Script in een transactie uitvoeren",
   "sql.txSkipped": "Transactie overgeslagen (script bevat VACUUM)",
   "json.format": "Formatteren",

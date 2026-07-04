@@ -48,6 +48,7 @@
   "sql.run": "Kör",
   "sql.runScript": "Kör som skript",
   "sql.clear": "Rensa",
+  "sql.historyFilter": "Filtrera historik",
   "sql.wrapTx": "Kör skript i en transaktion",
   "sql.txSkipped": "Transaktion hoppades över (skriptet innehåller VACUUM)",
   "json.format": "Formatera",
