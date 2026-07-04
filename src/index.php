@@ -36,7 +36,7 @@ if ($action !== null) {
             if (!App::needs_setup()) App::fail('Already configured', 403);
             if (!App::config_writable()) App::fail('config.json is not writable', 500);
             $pw = (string)($in['password'] ?? '');
-            if (strlen($pw) < 1) App::fail('Password required', 400);
+            if (strlen($pw) < 8) App::fail('Password required', 400);
             if (!App::set_password($pw)) App::fail('Could not write config.json', 500);
             App::start_authed_session();
             App::ok(['csrf' => App::csrf()]);
@@ -49,7 +49,7 @@ if ($action !== null) {
             $cur = (string)($in['current'] ?? '');
             $new = (string)($in['new'] ?? '');
             if (!password_verify($cur, App::config()['auth']['password_hash'] ?? '')) App::fail('Current password is incorrect', 403);
-            if (strlen($new) < 1) App::fail('New password required', 400);
+            if (strlen($new) < 8) App::fail('New password required', 400);
             if (!App::set_password($new)) App::fail('Could not write config.json', 500);
             App::ok();
             break;
