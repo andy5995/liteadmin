@@ -55,6 +55,7 @@ if ($action !== null) {
             break;
 
         case 'logout':
+            App::require_csrf();
             session_unset();
             session_destroy();
             App::ok();

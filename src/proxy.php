@@ -235,14 +235,23 @@ try {
         }
 
         case 'backup': {
-            $db = App::resolve($in['db'] ?? '');
-            if (!is_file($db['path'])) App::fail('Not found', 404);
+            list($pdo, $db) = App::pdo($in['db'] ?? '', false, true);
             $name = preg_replace('/[^A-Za-z0-9_.-]/', '_', basename($db['path']));
             if (!str_contains($name, '.')) $name .= '.sqlite';
             header('Content-Type: application/octet-stream');
             header('Content-Disposition: attachment; filename="' . $name . '"');
-            header('Content-Length: ' . filesize($db['path']));
-            readfile($db['path']);
+            $tmp = sys_get_temp_dir() . '/la_' . bin2hex(random_bytes(8)) . '.sqlite';
+            try {
+                $pdo->exec('VACUUM INTO ' . $pdo->quote($tmp));
+                header('Content-Length: ' . filesize($tmp));
+                readfile($tmp);
+            } catch (Throwable $e) {
+                @unlink($tmp);
+                header('Content-Length: ' . filesize($db['path']));
+                readfile($db['path']);
+                exit;
+            }
+            @unlink($tmp);
             exit;
         }
 

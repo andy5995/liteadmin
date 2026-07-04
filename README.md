@@ -61,6 +61,10 @@ php -S 127.0.0.1:8000
 
 > The built-in PHP server is for development only; it ignores `.htaccess` and will
 > expose `config.json`. Use a real web server in production.
+>
+> Session cookies are marked `Secure` by default, so over plain HTTP (e.g. this local
+> server) add `"insecure_http": true` to `config.json` or the browser won't keep you
+> logged in.
 
 ## Install from the apt repository (Debian/Ubuntu)
 
@@ -140,6 +144,11 @@ sudo unattended-upgrade --dry-run --debug 2>&1 | grep -i liteadmin
   Set `readonly: true` to forbid writes.
 - `create_dir` — folder where new server databases are created and auto-discovered
   (managed databases). Set to `null` to disable creating server databases.
+- `insecure_http` — session cookies are marked `Secure` by default (correct behind a
+  TLS-terminating reverse proxy, where `$_SERVER['HTTPS']` is empty). Set to `true` only for
+  plain-HTTP access such as local development, otherwise the browser won't send the cookie.
+- `debug` — when `true`, full error messages (which may include file paths) are returned to
+  the client. Leave unset/`false` in production; paths are stripped from errors by default.
 - `app.lang` — default UI language (`en`, `nl`, `de`, `fy`, `sv`). Users can override it
   with the language picker; on first visit the browser language is auto-detected.
 - **SQLite extensions** (optional, server only, PHP 8.4+ with `Pdo\Sqlite`): load shared

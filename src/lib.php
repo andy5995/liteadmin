@@ -13,13 +13,13 @@ class App {
     }
 
     static function boot() {
+        $cfg = self::config();
         ini_set('session.cookie_httponly', '1');
         ini_set('session.cookie_samesite', 'Strict');
         ini_set('session.use_strict_mode', '1');
-        if (!empty($_SERVER['HTTPS'])) ini_set('session.cookie_secure', '1');
+        ini_set('session.cookie_secure', empty($cfg['insecure_http']) ? '1' : '0');
         session_name('liteadmin');
         session_start();
-        $cfg = self::config();
         $timeout = $cfg['session']['timeout'] ?? 3600;
         if (!empty($_SESSION['auth'])) {
             if (time() - ($_SESSION['seen'] ?? 0) > $timeout) {
@@ -141,8 +141,9 @@ class App {
         if ($dir) {
             foreach (glob($dir . '/*') as $f) {
                 if (!is_file($f)) continue;
-                if (isset($configured[realpath($f)])) continue;
                 $name = basename($f);
+                if (preg_match('/-(wal|shm|journal)$/', $name)) continue;
+                if (isset($configured[realpath($f)])) continue;
                 $key = 'managed:' . $name;
                 if (isset($out[$key])) continue;
                 $out[$key] = [
@@ -204,7 +205,7 @@ class App {
         self::fail('Unknown database', 404);
     }
 
-    static function pdo($key, $forCreate = false) {
+    static function pdo($key, $forCreate = false, $allowWrite = false) {
         $db = self::resolve($key, $forCreate);
         if (!$forCreate && !is_file($db['path'])) self::fail('Database file missing', 404);
         $flags = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
@@ -224,7 +225,7 @@ class App {
             foreach ($exts as $ext) $loaded[] = ['name' => basename($ext), 'loaded' => false, 'error' => 'Pdo\\Sqlite unavailable'];
         }
         $pdo->exec('PRAGMA foreign_keys=ON');
-        if ($db['readonly']) $pdo->exec('PRAGMA query_only=ON');
+        if ($db['readonly'] && !$allowWrite) $pdo->exec('PRAGMA query_only=ON');
         $db['extensions_loaded'] = $loaded;
         return [$pdo, $db];
     }
@@ -238,7 +239,22 @@ class App {
     static function fail($msg, $code = 400) {
         http_response_code($code);
         header('Content-Type: application/json');
-        echo json_encode(['ok' => false, 'error' => $msg]);
+        echo json_encode(['ok' => false, 'error' => self::sanitize((string)$msg)]);
         exit;
+    }
+
+    private static function sanitize($msg) {
+        $cfg = self::config();
+        if (!empty($cfg['debug'])) return $msg;
+        $bases = [__DIR__, realpath(__DIR__), sys_get_temp_dir(), realpath(sys_get_temp_dir())];
+        if (!empty($cfg['create_dir'])) {
+            $cd = $cfg['create_dir'][0] === '/' ? $cfg['create_dir'] : __DIR__ . '/' . $cfg['create_dir'];
+            $bases[] = $cd;
+            $bases[] = realpath($cd);
+        }
+        $bases = array_unique(array_filter($bases));
+        usort($bases, fn($a, $b) => strlen($b) - strlen($a));
+        foreach ($bases as $p) $msg = str_replace([$p . '/', $p], '', $msg);
+        return $msg;
     }
 }
