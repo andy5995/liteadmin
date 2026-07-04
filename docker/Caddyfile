@@ -1,0 +1,23 @@
+:80 {
+	root * /var/www/liteadmin/src
+	encode zstd gzip
+
+	@blocked {
+		path /config.json
+		path /lib.php
+		path /databases/*
+		path *.sqlite *.sqlite3 *.db *.sqlite-wal *.sqlite-shm *.sqlite-journal
+	}
+	respond @blocked 403
+
+	php_fastcgi 127.0.0.1:9000
+	file_server {
+		index index.php
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy same-origin
+	}
+}

@@ -123,6 +123,43 @@ sudo unattended-upgrade --dry-run --debug 2>&1 | grep -i liteadmin
 > shorthand `"liteadmin:stable"` (i.e. `${origin}:${suite}`) in `Unattended-Upgrade::Allowed-Origins`
 > works too.
 
+## Run with Docker
+
+The included `Dockerfile` builds a single, self-contained image running **Caddy + php-fpm 8.4**
+(with `pdo_sqlite`). No build step, no external services.
+
+```bash
+docker build -t liteadmin .
+docker run -d --name liteadmin -p 8080:80 \
+  -v liteadmin-data:/var/www/liteadmin/src/databases \
+  liteadmin
+```
+
+Open <http://localhost:8080> and choose a password on first run (the image ships with an empty
+password, so it starts on the setup screen).
+
+- The `liteadmin-data` volume keeps your server databases across container restarts.
+- To persist the configuration too, bind-mount it — it must stay writable by the container's
+  `www-data` so the setup and **Change password** screens can save:
+  `-v "$(pwd)/config.json:/var/www/liteadmin/src/config.json"`.
+- Session cookies are `Secure` by default. When reaching the container over plain HTTP, set
+  `"insecure_http": true` in `config.json`, or (recommended) run it behind a TLS-terminating
+  reverse proxy.
+
+Or with Compose:
+
+```yaml
+services:
+  liteadmin:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - liteadmin-data:/var/www/liteadmin/src/databases
+volumes:
+  liteadmin-data:
+```
+
 ## Configuration — `src/config.json`
 
 ```json
