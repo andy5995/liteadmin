@@ -10,7 +10,9 @@ desktop.ini
 # Logs and temp
 *.log
 *.tmp
+*.deb
 /tmp/
+/stage/
 
 # Test artifacts
 tests/.tmp/
