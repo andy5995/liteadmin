@@ -29,7 +29,12 @@ jobs:
       - name: Build the release package
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" liteadmin_*.deb --generate-notes
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" liteadmin_*.deb --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" liteadmin_*.deb --generate-notes
+          fi
 
       - name: Import the release script
         run: echo "${{ secrets.APT_GPG_KEY }}" | gpg --batch --import
