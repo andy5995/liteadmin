@@ -1,0 +1,64 @@
+name: release
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  deb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Extract version number
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Build the package
+        run: |
+          mkdir -p stage/usr/share/liteadmin stage/DEBIAN
+          cp -r src/. stage/usr/share/liteadmin/
+          rm -rf stage/usr/share/liteadmin/databases \
+                 stage/usr/share/liteadmin/config.json
+          sed "s/__VERSION__/${VERSION}/" packaging/control > stage/DEBIAN/control
+          install -m 755 packaging/postinst stage/DEBIAN/postinst
+          install -m 755 packaging/postrm   stage/DEBIAN/postrm
+          dpkg-deb --build --root-owner-group stage "liteadmin_${VERSION}_all.deb"
+
+      - name: Build the release package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" liteadmin_*.deb --generate-notes
+
+      - name: Import the release script
+        run: echo "${{ secrets.APT_GPG_KEY }}" | gpg --batch --import
+
+      - name: Update the apt repo
+        run: |
+          git fetch origin gh-pages
+          git worktree add aptrepo gh-pages
+          mkdir -p aptrepo/pool/main
+          cp "liteadmin_${VERSION}_all.deb" aptrepo/pool/main/
+          ls -1v aptrepo/pool/main/liteadmin_*.deb | head -n -5 | xargs -r rm --
+
+          cd aptrepo
+          mkdir -p dists/stable/main/binary-amd64 \
+                   dists/stable/main/binary-arm64 \
+                   dists/stable/main/binary-all
+          apt-ftparchive --arch all packages pool \
+            > dists/stable/main/binary-all/Packages
+          cp dists/stable/main/binary-all/Packages dists/stable/main/binary-amd64/
+          cp dists/stable/main/binary-all/Packages dists/stable/main/binary-arm64/
+          gzip -kf dists/stable/main/binary-*/Packages
+
+          apt-ftparchive -c ../packaging/aptftp.conf release dists/stable \
+            > dists/stable/Release
+          gpg --batch --yes -abs        -o dists/stable/Release.gpg dists/stable/Release
+          gpg --batch --yes --clearsign -o dists/stable/InRelease   dists/stable/Release
+
+          git config user.name  "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "apt: liteadmin ${VERSION}"
+          git push origin gh-pages
