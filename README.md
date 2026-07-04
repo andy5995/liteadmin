@@ -62,6 +62,63 @@ php -S 127.0.0.1:8000
 > The built-in PHP server is for development only; it ignores `.htaccess` and will
 > expose `config.json`. Use a real web server in production.
 
+## Install from the apt repository (Debian/Ubuntu)
+
+A signed apt repository is published at <https://martijndeb.github.io/liteadmin>.
+
+```bash
+# 1. Trust the repository signing key
+sudo install -d -m 0755 /etc/apt/keyrings
+curl -fsSL https://martijndeb.github.io/liteadmin/pubkey.gpg \
+  | sudo gpg --dearmor -o /etc/apt/keyrings/liteadmin.gpg
+
+# 2. Add the repository (suite "stable", component "main")
+echo "deb [signed-by=/etc/apt/keyrings/liteadmin.gpg] https://martijndeb.github.io/liteadmin stable main" \
+  | sudo tee /etc/apt/sources.list.d/liteadmin.list
+
+# 3. Install
+sudo apt update
+sudo apt install liteadmin
+```
+
+The package installs the app to `/usr/share/liteadmin`, keeps its configuration at
+`/etc/liteadmin/config.json` and its databases under `/var/lib/liteadmin/databases` (both
+symlinked into the app directory). It depends on `php-fpm` and `php-sqlite3` and recommends
+`nginx` — point your web server at `/usr/share/liteadmin`, then open the site and set a
+password on first run.
+
+### Automatic updates (unattended-upgrades)
+
+The repository's `Release` file advertises the following fields, which you use to whitelist it:
+
+| Field            | Value       |
+| ---------------- | ----------- |
+| Origin           | `liteadmin` |
+| Label            | `liteadmin` |
+| Suite / Codename | `stable`    |
+| Component        | `main`      |
+
+To let [`unattended-upgrades`](https://wiki.debian.org/UnattendedUpgrades) keep LiteAdmin up to
+date, allow that origin. Create `/etc/apt/apt.conf.d/51liteadmin`:
+
+```
+Unattended-Upgrade::Origins-Pattern {
+    "origin=liteadmin,label=liteadmin,codename=stable";
+};
+```
+
+Then make sure the tooling is installed and enabled, and dry-run to confirm the match:
+
+```bash
+sudo apt install unattended-upgrades
+sudo dpkg-reconfigure -plow unattended-upgrades
+sudo unattended-upgrade --dry-run --debug 2>&1 | grep -i liteadmin
+```
+
+> The `origin`, `label` and `codename` keys map directly to the `Release` fields above; the
+> shorthand `"liteadmin:stable"` (i.e. `${origin}:${suite}`) in `Unattended-Upgrade::Allowed-Origins`
+> works too.
+
 ## Configuration — `src/config.json`
 
 ```json
