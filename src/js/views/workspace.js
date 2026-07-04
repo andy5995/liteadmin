@@ -1161,28 +1161,81 @@ const VDBE_INFO = {
   seek: ['explain.opSeek', 'good'], result: ['explain.opResult', 'good'],
 };
 
+const VDBE_LOOP_END = new Set(['Next', 'Prev', 'VNext', 'VPrev', 'SorterNext']);
+const VDBE_HOT = new Set(['Next', 'Prev', 'VNext', 'SorterNext', 'SeekRowid', 'SeekGE', 'SeekGT', 'SeekLE', 'SeekLT', 'NotExists', 'NotFound', 'IdxGE', 'IdxGT', 'IdxLE', 'IdxLT', 'DeferredSeek']);
+
+function bytecodeDepths(rows, iAddr, iOp, iP2) {
+  const n = rows.length;
+  const byAddr = new Map();
+  rows.forEach((r, i) => byAddr.set(Number(r[iAddr]), i));
+  const diff = new Array(n + 1).fill(0);
+  for (let i = 0; i < n; i++) {
+    if (!VDBE_LOOP_END.has(String(rows[i][iOp]))) continue;
+    const tgt = byAddr.get(Number(rows[i][iP2]));
+    if (tgt == null || tgt >= i) continue;
+    diff[tgt] += 1; diff[i + 1] -= 1;
+  }
+  const depth = new Array(n).fill(0);
+  for (let i = 0, c = 0; i < n; i++) { c += diff[i]; depth[i] = c; }
+  return depth;
+}
+
+function bytecodeCursorNames(rows, iOp, iP1, iP4, iCmt) {
+  const names = {};
+  const nameFrom = r => {
+    const cmt = iCmt >= 0 ? String(r[iCmt] || '') : '';
+    const m = cmt.match(/([A-Za-z_][\w]*)\s*$/);
+    if (m && !/^(root|iDb|nil)$/i.test(m[1])) return m[1];
+    const p4 = String(r[iP4] == null ? '' : r[iP4]);
+    if (/^[A-Za-z_][\w]*$/.test(p4)) return p4;
+    return null;
+  };
+  for (const r of rows) {
+    const op = String(r[iOp]);
+    if (op === 'OpenRead' || op === 'OpenWrite' || op === 'ReopenIdx') {
+      const nm = nameFrom(r);
+      if (nm) names[Number(r[iP1])] = nm;
+    }
+  }
+  return names;
+}
+
 function bytecodeView(columns, rows) {
   const iAddr = columns.indexOf('addr'), iOp = columns.indexOf('opcode'), iCmt = columns.indexOf('comment');
+  const iP1 = columns.indexOf('p1'), iP2 = columns.indexOf('p2'), iP4 = columns.indexOf('p4');
+  const depth = bytecodeDepths(rows, iAddr, iOp, iP2);
+  const maxDepth = depth.reduce((a, b) => Math.max(a, b), 0);
+  const cursorName = bytecodeCursorNames(rows, iOp, iP1, iP4, iCmt);
   let warns = 0;
-  const body = rows.map(r => {
+  const body = rows.map((r, i) => {
     const op = String(r[iOp] == null ? '' : r[iOp]);
     const cat = VDBE_CAT[op];
     const inf = cat ? VDBE_INFO[cat] : null;
     const sev = inf ? inf[1] : '';
     if (sev === 'warn') warns++;
-    const note = inf ? t(inf[0]) : '';
+    const isHot = depth[i] >= 2 && VDBE_HOT.has(op);
+    let note = isHot ? t('explain.hotStep') : (inf ? t(inf[0]) : '');
+    const cur = cursorName[Number(r[iP1])];
+    if (cur && (op.startsWith('Open') || op === 'Column' || op === 'Rowid' || op === 'Rewind' || op === 'Last' || VDBE_HOT.has(op))) {
+      note = note ? note + ' — ' + cur : cur;
+    }
     const detail = (iCmt >= 0 && r[iCmt] != null && r[iCmt] !== '') ? String(r[iCmt]) : r.slice(2, 7).join(' ').trim();
-    return el('tr', { class: sev === 'warn' ? 'bc-warn' : '' }, [
+    const noteCls = isHot ? 'hot' : sev;
+    const icon = isHot ? 'local_fire_department' : (sev === 'warn' ? 'warning' : (sev === 'good' ? 'bolt' : 'chevron_right'));
+    return el('tr', { class: (sev === 'warn' ? 'bc-warn ' : '') + (isHot ? 'bc-hot' : '') }, [
       el('td', { text: String(r[iAddr]) }),
-      el('td', { text: op }),
+      el('td', { class: 'bc-op' + (depth[i] ? ' bc-in' : ''), style: 'padding-left:' + (0.5 + depth[i] * 1.2) + 'rem', text: op }),
       el('td', { class: 'small-text', text: detail }),
-      el('td', {}, note ? [el('span', { class: 'bc-note ' + sev }, [el('i', { text: sev === 'warn' ? 'warning' : (sev === 'good' ? 'bolt' : 'chevron_right') }), el('span', { text: note })])] : []),
+      el('td', {}, note ? [el('span', { class: 'bc-note ' + noteCls }, [el('i', { text: icon }), el('span', { text: note })])] : []),
     ]);
   });
   const head = el('tr', {}, ['addr', 'opcode', 'detail', t('explain.analysis')].map(h => el('th', { scope: 'col', text: h })));
   const table = el('table', { class: 'datagrid bytecode' }, [el('thead', {}, [head]), el('tbody', {}, body)]);
+  const parts = [];
+  if (warns) parts.push(t('explain.bnFound', { n: warns }));
+  if (maxDepth >= 2) parts.push(t('explain.nestedLoop', { d: maxDepth }));
   return el('div', {}, [
-    el('p', { class: 'small-text' + (warns ? ' error-text' : ''), text: warns ? t('explain.bnFound', { n: warns }) : t('explain.bnNone') }),
+    el('p', { class: 'small-text' + (parts.length ? ' error-text' : ''), text: parts.length ? parts.join(' · ') : t('explain.bnNone') }),
     el('div', { class: 'grid-wrap' }, [table]),
   ]);
 }

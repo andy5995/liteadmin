@@ -108,6 +108,8 @@
   "explain.opEphemeral": "Temporäre In-Memory-Tabelle — Mehraufwand",
   "explain.opSeek": "Indizierter Zugriff — direkt und schnell",
   "explain.opResult": "Eine Ergebniszeile erzeugen",
+  "explain.hotStep": "Innerer Schleifenschritt — läuft einmal pro äußerer Zeile",
+  "explain.nestedLoop": "Verschachtelte Schleifen (Tiefe {d}) — ein innerer Scan läuft pro äußerer Zeile (O(n·m))",
   "explain.bytecodeHelp": "Jede Zeile ist eine VDBE-Anweisung; das Programm läuft von oben nach unten ab addr 0.\n\nSpalten:\n  addr     Anweisungsadresse (Sprungziel)\n  opcode   die Operation\n  p1–p5    Operanden — Cursornummern, Register, Sprungadressen, Konstanten\n  comment  lesbare Notiz von SQLite\n\nHäufige Opcodes:\n  OpenRead / OpenWrite    Cursor auf Tabelle oder Index öffnen\n  Rewind / Next           Scan starten und fortsetzen\n  Seek* / IdxGE / IdxGT   per Index springen (gut — indizierter Zugriff)\n  Column                  Spalte in ein Register lesen\n  ResultRow               eine Ergebniszeile ausgeben\n  Eq / Ne / Lt / Gt / If* Vergleiche und bedingte Sprünge\n  SorterOpen / Sort       eine temporäre Sortierung (oft ORDER BY/GROUP BY ohne Index)\n  Halt                    Stopp\n\nLesetipps: eine Rewind…Column…Next-Schleife über eine Tabelle ist ein vollständiger Scan; Seek/Idx-Opcodes bedeuten Indexnutzung; ein Sort/Sorter-Schritt ist Mehraufwand, den ein Index oft vermeiden kann.",
   "explain.auto": "Auto-Analyse beim Ausführen",
   "explain.covering": "abdeckend",

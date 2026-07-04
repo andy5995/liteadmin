@@ -108,6 +108,8 @@
   "explain.opEphemeral": "Tydlike in-memory tabel — ekstra wurk",
   "explain.opSeek": "Yndeksearre lookup — direkte, flugge tagong",
   "explain.opResult": "Lever in resultaatrige op",
+  "explain.hotStep": "Binnenlus-stap — draait ien kear de bûtenste rige",
+  "explain.nestedLoop": "Nêstele lussen (djipte {d}) — in binnenste scan draait per bûtenste rige (O(n·m))",
   "explain.bytecodeHelp": "Elke rige is ien VDBE-ynstruksje; it programma rint fan boppen nei ûnderen fan addr 0 ôf.\n\nKolommen:\n  addr     ynstruksje-adres (sprongdoel)\n  opcode   de operaasje\n  p1–p5    operanden — cursornûmers, registers, sprongadressen, konstanten\n  comment  lêsbere notysje fan SQLite\n\nFaak foarkommende opcodes:\n  OpenRead / OpenWrite    iepenje in cursor op in tabel of yndeks\n  Rewind / Next           start en rin in scan\n  Seek* / IdxGE / IdxGT   springe fia in yndeks (goed — yndeksearre tagong)\n  Column                  lês in kolom yn in register\n  ResultRow               jou ien resultaatrige werom\n  Eq / Ne / Lt / Gt / If* fergelikingen en betingstlike sprongen\n  SorterOpen / Sort       in tydlike sortearring (faak ORDER BY/GROUP BY sûnder yndeks)\n  Halt                    stop\n\nLêstips: in Rewind…Column…Next-loop oer in tabel is in full scan; Seek/Idx-opcodes betsjutte dat in yndeks brûkt wurdt; in Sort/Sorter-stap is ekstra wurk dat in yndeks faak foarkomme kin.",
   "explain.auto": "Auto-analyse by útfiere",
   "explain.covering": "dekkend",

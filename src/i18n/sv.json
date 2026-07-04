@@ -108,6 +108,8 @@
   "explain.opEphemeral": "Tillfällig tabell i minnet — extra arbete",
   "explain.opSeek": "Indexerad uppslagning — direkt, snabb åtkomst",
   "explain.opResult": "Producera en resultatrad",
+  "explain.hotStep": "Inre loop-steg — körs en gång per yttre rad",
+  "explain.nestedLoop": "Nästlade loopar (djup {d}) — en inre skanning körs per yttre rad (O(n·m))",
   "explain.bytecodeHelp": "Varje rad är en VDBE-instruktion; programmet körs uppifrån och ned från addr 0.\n\nKolumner:\n  addr     instruktionsadress (hoppmål)\n  opcode   operationen\n  p1–p5    operander — markörnummer, register, hoppadresser, konstanter\n  comment  SQLites läsbara anteckning\n\nVanliga opcodes:\n  OpenRead / OpenWrite    öppna en markör på en tabell eller ett index\n  Rewind / Next           starta och stega en sökning\n  Seek* / IdxGE / IdxGT   hoppa via ett index (bra — indexerad åtkomst)\n  Column                  läs en kolumn till ett register\n  ResultRow               sänd ut en resultatrad\n  Eq / Ne / Lt / Gt / If* jämförelser och villkorliga hopp\n  SorterOpen / Sort       en tillfällig sortering (ofta ORDER BY/GROUP BY utan index)\n  Halt                    stopp\n\nLästips: en Rewind…Column…Next-loop över en tabell är en fullständig sökning; Seek/Idx-opcodes betyder att ett index används; ett Sort/Sorter-steg är extra arbete som ett index ofta kan ta bort.",
   "explain.auto": "Autoanalysera vid körning",
   "explain.covering": "täckande",

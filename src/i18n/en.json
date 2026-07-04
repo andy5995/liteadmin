@@ -108,6 +108,8 @@
   "explain.opEphemeral": "Temporary in-memory table — extra work",
   "explain.opSeek": "Indexed lookup — direct, fast access",
   "explain.opResult": "Produce a result row",
+  "explain.hotStep": "Inner-loop step — runs once per outer-loop row",
+  "explain.nestedLoop": "Nested loops (depth {d}) — an inner scan runs once per outer row (O(n·m))",
   "explain.bytecodeHelp": "Each row is one VDBE instruction; the program runs top to bottom starting at addr 0.\n\nColumns:\n  addr     instruction address (used as a jump target)\n  opcode   the operation\n  p1–p5    operands — cursor numbers, registers, jump addresses, constants\n  comment  SQLite's human-readable note\n\nCommon opcodes:\n  OpenRead / OpenWrite    open a cursor on a table or index\n  Rewind / Next           start and advance a scan\n  Seek* / IdxGE / IdxGT   jump via an index (good — indexed access)\n  Column                  read a column into a register\n  ResultRow               emit one row of the result\n  Eq / Ne / Lt / Gt / If* comparisons and conditional jumps\n  SorterOpen / Sort       a temporary sort (often ORDER BY/GROUP BY without an index)\n  Halt                    stop\n\nReading tips: a Rewind…Column…Next loop over a table is a full scan; Seek/Idx opcodes mean an index is used; a Sort/Sorter step is extra work an index can often remove.",
   "explain.auto": "Auto-analyze on run",
   "explain.covering": "covering",
