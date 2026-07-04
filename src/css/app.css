@@ -315,6 +315,13 @@ table.datagrid tr.bc-warn td { background: color-mix(in srgb, var(--error) 12%, 
 table.datagrid tr.bc-hot td { background: color-mix(in srgb, var(--error) 20%, transparent); }
 .bc-note.hot { color: var(--error); font-weight: 600; }
 .bc-note.hot i { color: var(--error); opacity: 1; }
+.analyze-banner {
+  display: flex; align-items: center; gap: .75rem; margin: 0 0 1rem; padding: .85rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--error) 40%, var(--outline-variant));
+  background: color-mix(in srgb, var(--error) 10%, var(--surface-container-low));
+}
+.analyze-banner > i { color: var(--error); font-size: 1.5rem; flex: 0 0 auto; }
+.analyze-banner .max { flex: 1; }
 .bc-note { display: inline-flex; align-items: center; gap: .35rem; }
 .bc-note i { font-size: 1rem; opacity: .85; }
 .bc-note.warn { color: var(--error); }

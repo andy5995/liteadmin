@@ -1278,13 +1278,12 @@ async function explainPlan(ws, out) {
     if (/\bWHERE\b[\s\S]*\bOR\b/i.test(sql)) hints.push({ text: t('explain.orUsage') });
     const uniqScans = [...new Set(scans)];
     if (uniqScans.length >= 2) hints.push({ text: t('explain.multiScan') });
-    let statCount = null;
-    try { const s1 = await ws.conn.query("SELECT count(*) FROM sqlite_master WHERE name='sqlite_stat1'", { limit: 1 }); statCount = s1.rows[0][0] ? (await ws.conn.query('SELECT count(*) FROM sqlite_stat1', { limit: 1 })).rows[0][0] : 0; } catch (_) {}
-    if (statCount === 0 && warn && !ws.conn.readonly) hints.push({ text: t('explain.staleStats'), fix: async () => { try { await ws.conn.exec('ANALYZE'); toast(t('advice.applied')); explainPlan(ws, out); } catch (e) { toast(e.message, true); } } });
+    const noStats = await neverAnalyzed(ws);
 
     const suggestions = await indexSuggestions(ws, sql, uniqScans);
 
     clear(out);
+    if (noStats) out.append(analyzeBanner(ws, () => explainPlan(ws, out)));
     out.append(el('p', { class: 'small-text' + (warn ? ' error-text' : ''), text: warn ? t('explain.fullScan', { n: warn }) : t('explain.usesIndex') }), list);
     if (hints.length) out.append(section(t('explain.hints'), el('div', { class: 'task-list' }, hints.map(h => el('div', { class: 'task-row' }, [
       el('i', { class: 'task-status', text: 'tips_and_updates' }),
@@ -1304,17 +1303,50 @@ async function explainPlan(ws, out) {
   } catch (e) { clear(out); out.append(errorBox(e)); }
 }
 
+async function neverAnalyzed(ws) {
+  try {
+    const s1 = await ws.conn.query("SELECT count(*) FROM sqlite_master WHERE name='sqlite_stat1'", { limit: 1 });
+    if (!s1.rows[0][0]) return true;
+    const c = await ws.conn.query('SELECT count(*) FROM sqlite_stat1', { limit: 1 });
+    return !c.rows[0][0];
+  } catch (_) { return false; }
+}
+
+function analyzeBanner(ws, rerun) {
+  return el('div', { class: 'analyze-banner round', role: 'alert' }, [
+    el('i', { text: 'query_stats' }),
+    el('div', { class: 'max' }, [
+      el('div', { text: t('explain.noAnalyze') }),
+      el('div', { class: 'small-text', text: t('explain.noAnalyzeHint') }),
+    ]),
+    ws.conn.readonly ? null : el('button', { class: 'small', onClick: async () => {
+      try { await ws.conn.exec('ANALYZE'); toast(t('advice.applied')); rerun(); }
+      catch (e) { toast(e.message, true); }
+    } }, [el('i', { text: 'auto_fix_high' }), el('span', { text: t('explain.runAnalyze') })]),
+  ].filter(Boolean));
+}
+
 async function benchmarkQuery(ws, out) {
   const sql = ((ws.editor && ws.editor.getValue()) || '').trim();
   if (!sql) return;
   const N = 5;
   clear(out); out.append(el('progress', { class: 'circle' }));
   try {
-    const times = [];
-    for (let i = 0; i < N; i++) { const r = await ws.conn.query(sql, { limit: prefs.get('pageSize') }); times.push(r.elapsed || 0); }
-    const min = Math.min(...times), max = Math.max(...times), avg = times.reduce((a, b) => a + b, 0) / times.length;
+    const runs = [];
+    for (let i = 0; i < N; i++) { const r = await ws.conn.query(sql, { limit: prefs.get('pageSize') }); runs.push(r.elapsed || 0); }
+    const cold = runs[0];
+    const warmRuns = runs.slice(1);
+    const warm = Math.min(...warmRuns);
+    const warmAvg = warmRuns.reduce((a, b) => a + b, 0) / warmRuns.length;
     clear(out);
-    out.append(el('p', { class: 'small-text', text: `${t('sql.benchmark')}: ${N}× · min ${min} · avg ${avg.toFixed(1)} · max ${max} ${t('sql.elapsed')}` }));
+    if (await neverAnalyzed(ws)) out.append(analyzeBanner(ws, () => benchmarkQuery(ws, out)));
+    out.append(el('p', { class: 'small-text' }, [
+      el('b', { text: t('sql.cold') + ': ' }), `${cold} ${t('sql.elapsed')}`, ' · ',
+      el('b', { text: t('sql.warm') + ': ' }), `${warm} ${t('sql.elapsed')}`,
+      ` (${N}× · ${t('sql.warm')} avg ${warmAvg.toFixed(1)})`,
+    ]));
+    const ioBound = cold - warm >= 5 && cold >= warm * 1.8;
+    out.append(el('p', { class: 'small-text', text: ioBound ? t('sql.benchIo', { d: cold - warm }) : t('sql.benchCpu') }));
   } catch (e) { clear(out); out.append(errorBox(e)); }
 }
 
