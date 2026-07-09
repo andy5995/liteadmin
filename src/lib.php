@@ -5,9 +5,9 @@ class App {
 
     static function config() {
         if (self::$config === null) {
-            $raw = file_get_contents(__DIR__ . '/config.json');
-            self::$config = json_decode($raw, true);
-            if (!is_array(self::$config)) self::fail('Invalid configuration', 500);
+            $parsed = json_decode((string)@file_get_contents(__DIR__ . '/config.json'), true);
+            self::$config = is_array($parsed) ? $parsed : [];
+            if (!is_array($parsed)) self::fail('Invalid configuration (config.json is not valid JSON)', 500);
         }
         return self::$config;
     }
@@ -243,7 +243,10 @@ class App {
         exit;
     }
 
+    private static $sanitizing = false;
     private static function sanitize($msg) {
+        if (self::$sanitizing) return $msg;
+        self::$sanitizing = true;
         $cfg = self::config();
         if (!empty($cfg['debug'])) return $msg;
         $bases = [__DIR__, realpath(__DIR__), sys_get_temp_dir(), realpath(sys_get_temp_dir())];

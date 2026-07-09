@@ -49,6 +49,9 @@ export const Api = {
 
   proxy(action, params = {}) { return this.call('proxy.php', { action, ...params }); },
 
+  plugins() { return this.call('index.php?action=plugins', { action: 'plugins' }); },
+  plugin(name, action, params = {}) { return this.call('plugin.php', { plugin: name, action, ...params }); },
+
   async backupBlob(db) {
     const r = await this.call('proxy.php', { action: 'backup', db }, true);
     return r.blob();

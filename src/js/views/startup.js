@@ -3,6 +3,7 @@ import { t } from '../i18n.js';
 import { Api } from '../api.js';
 import { recent } from '../store.js';
 import { openServer, openLocal, saveHandle, loadHandle } from '../connection.js';
+import { ensurePluginsLoaded, pluginStartCards } from '../plugins.js';
 import { topBar } from './chrome.js';
 
 export async function renderStartup(root, ctx) {
@@ -11,13 +12,36 @@ export async function renderStartup(root, ctx) {
   root.append(topBar(ctx, { title: t('start.title'), home: false }), el('main', { id: 'main', class: 'work' }, [body]));
   body.append(el('progress', { class: 'circle' }));
 
+  await ensurePluginsLoaded();
   let databases = [];
   try { databases = (await Api.proxy('databases')).databases; }
   catch (e) { toast(e.message, true); }
   const byKey = Object.fromEntries(databases.map(d => [d.key, d]));
 
   clear(body);
-  body.append(hero(databases), serverSection(ctx, databases), localSection(ctx), recentSection(ctx, byKey));
+  body.append(...[hero(databases), serverSection(ctx, databases), localSection(ctx), pluginsSection(ctx), recentSection(ctx, byKey)].filter(Boolean));
+}
+
+function pluginsSection(ctx) {
+  const cards = pluginStartCards();
+  if (!cards.length) return null;
+  const grid = el('div', { class: 'grid' });
+  for (const c of cards) {
+    const open = () => { try { c.onOpen && c.onOpen(ctx); } catch (e) { toast(e.message, true); } };
+    const card = el('article', { class: 's12 m6 l4 round border db-card', role: 'button', tabindex: '0' }, [
+      el('div', { class: 'row' }, [
+        el('div', { class: 'db-card-avatar' }, [el('i', { text: c.icon || 'extension' })]),
+        el('div', { class: 'max' }, [
+          el('h6', { text: c.title || c.plugin }),
+          c.subtitle ? el('div', { class: 'small-text', text: c.subtitle }) : null,
+        ].filter(Boolean)),
+      ]),
+    ]);
+    card.addEventListener('click', open);
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+    grid.append(card);
+  }
+  return el('section', { class: 'start-section' }, [el('h6', { text: t('start.plugins') }), grid]);
 }
 
 function hero(databases) {

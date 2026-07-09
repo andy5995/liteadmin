@@ -212,6 +212,83 @@ volumes:
 php -r 'echo password_hash("your-password", PASSWORD_DEFAULT), "\n";'
 ```
 
+## Plugins
+
+LiteAdmin has a small plugin system so functionality ships — and installs — separately, including as
+standalone `.deb` packages. **Plugins are fully optional and off by default.** Plugins live in
+`src/plugins/<name>/`, but a plugin only becomes active when its name is listed in `config.json`:
+
+```json
+{ "plugins": ["liteadmin-apikeys"] }
+```
+
+With no `plugins` key nothing is active. The **core package excludes `src/plugins/`**, so on a
+packaged install each plugin is shipped as its own `.deb`: it installs the code into
+`/usr/share/liteadmin/plugins/<name>/` and its `postinst` enables it by adding the name to `plugins`
+in the config (uninstalling removes it again) — a one-command, reversible add-on.
+
+### Anatomy
+
+```
+src/plugins/<name>/
+  plugin.json     manifest (name, version, server/client entry points)
+  plugin.php      server side — a class with a register(PluginHost $host) method
+  plugin.js       client side — export function register(api) { … }
+```
+
+**Server API** (`$host`):
+
+- `route($action, $handler, ['auth' => …])` — expose an endpoint at `plugin.php`. `auth` is
+  `'session'` (LiteAdmin admin, default), `'public'`, or `['guard' => 'apikey', 'scope' => 'write']`
+  to delegate to another plugin's auth guard.
+- `service($name, $obj)` / `getService($name)` — publish/consume a shared service.
+- `guard($name, $handler)` — publish a reusable auth guard.
+- `dataDir()` — a writable per-plugin data directory (under `data_dir`).
+- `on($event, $handler)` / `emit($event, $payload)` — event hooks.
+
+**Client API** (`api`): `addStartCard({icon,title,subtitle,onOpen})`, `addTab({id,icon,label,render(panel, ws)})`,
+`call(action, params)` (posts to that plugin's endpoints), plus `el`, `clear`, `t`, `toast`, `download`.
+
+Calls go through `src/plugin.php`, which handles discovery, the auth mode and JSON I/O.
+
+### Example plugin: `liteadmin-apikeys`
+
+`src/plugins/liteadmin-apikeys/` issues API keys with **read**/**write** scopes (stored hashed). It is
+the foundation other plugins build on: it publishes
+
+- the **`apikeys` service** — `validate($key, $scope)` and `keyFromRequest()`, and
+- the **`apikey` guard** — so any plugin route with `['auth' => ['guard' => 'apikey', 'scope' => 'read']]`
+  requires a valid key, presented as `X-Api-Key: <key>` or `Authorization: Bearer <key>`.
+
+Once enabled, manage keys from the **Plugins** section on the start page.
+
+Planned plugins that slot into the same system: a **REST API** exposing the generated OpenAPI
+endpoints as CRUD, a **code generator** (tables → typed classes/definitions), and an **MCP server** —
+each guarding its endpoints with the `apikey` guard above.
+
+### Configuration
+
+- `plugins` — array of enabled plugin names. **Absent/empty means no plugins are active.**
+- `plugin_dir` — runtime plugin directory (default `plugins`, relative to `src/`).
+- `data_dir` — writable base for plugin data (default `data`). On a packaged install point this at a
+  writable location, e.g. `"data_dir": "/var/lib/liteadmin"`.
+
+From a source checkout the bundled plugin is already in `src/plugins/`, so enabling it is just adding
+`"plugins": ["liteadmin-apikeys"]` to `config.json` (and reloading php-fpm if you run one).
+
+### Packaging a plugin as a `.deb`
+
+Add a `packaging/<name>/control` (see `packaging/liteadmin-apikeys/`, which also ships `postinst`/`postrm`
+that toggle the plugin in the config) and build:
+
+```bash
+packaging/build-plugin.sh liteadmin-apikeys 0.3.0
+```
+
+This produces `liteadmin-apikeys_0.3.0_all.deb`, which installs the plugin into
+`/usr/share/liteadmin/plugins/<name>/`, depends on the `liteadmin` package, and enables itself on
+install — no core changes required.
+
 ## Translating
 
 LiteAdmin ships with **English, Dutch, German, Frisian and Swedish** (`src/i18n/*.json`).

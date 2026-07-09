@@ -1,0 +1,11 @@
+{
+  "name": "liteadmin-apikeys",
+  "label": "API Keys",
+  "version": "0.3.0",
+  "description": "Issue and manage API keys with read/write scopes. Provides the 'apikey' auth guard and 'apikeys' service so other plugins (REST API, MCP server, …) can require a valid key.",
+  "server": "plugin.php",
+  "serverClass": "ApiKeysPlugin",
+  "client": "plugin.js",
+  "provides": ["apikeys", "guard:apikey"],
+  "requires": []
+}

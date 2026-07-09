@@ -7,6 +7,7 @@ import { setSchema, createEditor, colorizeSql } from '../editor.js';
 import { renderGrid } from '../grid.js';
 import { MAINTENANCE } from '../connection.js';
 import { Api } from '../api.js';
+import { ensurePluginsLoaded, pluginTabs } from '../plugins.js';
 import { topBar } from './chrome.js';
 
 const TYPES = ['INTEGER', 'TEXT', 'REAL', 'NUMERIC', 'BLOB'];
@@ -32,6 +33,7 @@ export async function renderWorkspace(root, ctx) {
   ws.shell = el('div', { class: 'app-shell' }, [rail, work]);
   const toggleRail = () => ws.shell.classList.toggle('show-rail');
 
+  await ensurePluginsLoaded();
   try { ws.info = await conn.dbInfo(); } catch (_) { ws.info = null; }
 
   ws.walChipEl = walChip(ws.info);
@@ -57,6 +59,12 @@ function buildTabs(ws) {
     ['database', 'database', t('tab.database')],
     ['history', 'history', t('tab.history')],
   ];
+  ws.pluginTabs = {};
+  for (const pt of pluginTabs()) {
+    const key = 'plugin:' + pt.plugin + ':' + pt.id;
+    ws.pluginTabs[key] = pt;
+    defs.push([key, pt.icon || 'extension', pt.label || pt.id]);
+  }
   ws.tabEls = {};
   for (const [id, icon, label] of defs) {
     const a = el('a', { role: 'tab', tabindex: '0', 'aria-selected': 'false' }, [el('i', { text: icon }), el('span', { text: label })]);
@@ -76,7 +84,10 @@ function selectTab(ws, id) {
     a.setAttribute('aria-selected', String(on));
   }
   clear(ws.body);
-  ({ browse: browseTab, structure: structureTab, sql: sqlTab, create: createTab, database: databaseTab, history: historyTab }[id])(ws);
+  const coreRender = { browse: browseTab, structure: structureTab, sql: sqlTab, create: createTab, database: databaseTab, history: historyTab }[id];
+  if (coreRender) { coreRender(ws); return; }
+  const pt = ws.pluginTabs && ws.pluginTabs[id];
+  if (pt) { try { pt.render(ws.body, ws); } catch (e) { toast(e.message, true); } }
 }
 
 async function refreshTables(ws) {

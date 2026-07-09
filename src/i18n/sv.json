@@ -10,6 +10,7 @@
   "nav.databases": "Databaser",
   "nav.home": "Start",
   "start.title": "Välj en databas",
+  "start.plugins": "Plugins",
   "start.server": "Serverdatabaser",
   "start.open": "Öppna",
   "start.local": "Lokala databaser",

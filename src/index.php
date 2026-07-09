@@ -25,6 +25,13 @@ if ($action !== null) {
             ]);
             break;
 
+        case 'plugins':
+            if (!App::authed()) App::fail('Not authenticated', 401);
+            require_once __DIR__ . '/plugins.php';
+            Plugins::boot();
+            App::ok(['plugins' => Plugins::list_public()]);
+            break;
+
         case 'login':
             if (App::login($in['username'] ?? '', $in['password'] ?? '')) {
                 App::ok(['csrf' => App::csrf()]);

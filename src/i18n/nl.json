@@ -10,6 +10,7 @@
   "nav.databases": "Databases",
   "nav.home": "Start",
   "start.title": "Kies een database",
+  "start.plugins": "Plugins",
   "start.server": "Serverdatabases",
   "start.open": "Openen",
   "start.local": "Lokale databases",

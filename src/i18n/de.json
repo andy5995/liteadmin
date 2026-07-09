@@ -10,6 +10,7 @@
   "nav.databases": "Datenbanken",
   "nav.home": "Start",
   "start.title": "Datenbank auswählen",
+  "start.plugins": "Plugins",
   "start.server": "Server-Datenbanken",
   "start.open": "Öffnen",
   "start.local": "Lokale Datenbanken",

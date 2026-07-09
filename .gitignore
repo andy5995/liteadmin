@@ -36,5 +36,8 @@ src/databases/*
 src/ext/*
 !src/ext/.gitkeep
 
+# Runtime plugin data (API-key store, etc.)
+src/data/
+
 
 src/config.local.json
